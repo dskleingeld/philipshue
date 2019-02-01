@@ -15,9 +15,9 @@ use ::json::*;
 #[cfg(feature = "nupnp")]
 pub fn discover() -> Result<Vec<Discovery>> {
     use hyper::net::HttpsConnector;
-    use hyper_openssl::OpensslClient;
+    use hyper_rustls::TlsClient;
 
-    let ssl = OpensslClient::new().unwrap();
+    let ssl = TlsClient::new();
     let connector = HttpsConnector::new(ssl);
     let client = Client::with_connector(connector);
 
