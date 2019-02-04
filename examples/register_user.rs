@@ -18,7 +18,7 @@ fn main() {
         let ip = discover().pop().unwrap();
 
         loop {
-            match bridge::register_user(&ip, &*args[1]) {
+            match bridge::register_user(&ip, args.remove(1)) {
                 Ok(bridge) => {
                     println!("User registered: {}, on IP: {}", bridge, ip);
                     break;

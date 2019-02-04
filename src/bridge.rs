@@ -152,10 +152,10 @@ fn extract<'a, T: Deserialize<'a>>(responses: Vec<HueResponse<T>>) -> Result<Vec
 
 impl Bridge {
     /// Creates a `Bridge` on the given IP with the given username
-    pub fn new<S: Into<String>, U: Into<String>>(ip: S, username: U) -> Self {
+    pub fn new<S: AsRef<str>>(ip: S, username: S) -> Self {
         Bridge {
             client: Client::new(),
-            url: format!("http://{}/api/{}/", ip.into(), username.into()),
+            url: format!("http://{}/api/{}/", ip.as_ref(), username.as_ref()),
         }
     }
     /// Gets the IP of bridge

@@ -25,7 +25,7 @@ fn run() -> Result<(), ParseIntError> {
                  args[0]);
         return Ok(());
     }
-    let bridge = Bridge::new(discover().pop().unwrap(), &*args[1]);
+    let bridge = Bridge::new(discover().pop().unwrap(), (&*args[1]).to_string());
     let group_id: usize = args[2].parse()?;
 
     let cmd = LightCommand::default();

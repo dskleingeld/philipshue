@@ -6,12 +6,12 @@ mod discover;
 use discover::discover;
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    let mut args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         println!("Usage : {:?} <username>", args[0]);
         return;
     }
-    let bridge = Bridge::new(discover().pop().unwrap(), &*args[1]);
+    let bridge = Bridge::new(discover().pop().unwrap(), args.remove(1));
 
     match bridge.get_all_groups() {
         Ok(groups) => {

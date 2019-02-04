@@ -11,7 +11,7 @@ fn main() {
         println!("usage : {:?} <username>", args[0]);
         return;
     }
-    let bridge = Bridge::new(discover().pop().unwrap(), &*args[1]);
+    let bridge = Bridge::new(discover().pop().unwrap(), args.remove(1));
 
     match bridge.get_all_lights() {
         Ok(lights) => {

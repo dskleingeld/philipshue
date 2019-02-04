@@ -25,7 +25,7 @@ fn run() -> Result<(), ParseIntError> {
                  args[0]);
         return Ok(());
     }
-    let bridge = Bridge::new(discover().pop().unwrap(), &*args[1]);
+    let bridge = Bridge::new(discover().pop().unwrap(), (&*args[1]).to_string());
     let input_lights = args[2].split(",")
         .fold(Ok(Vec::new()),
               |v, s| v.and_then(|mut v| s.parse::<usize>().map(|n| v.push(n)).map(|_| v)))?;
