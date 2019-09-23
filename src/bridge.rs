@@ -1,5 +1,4 @@
-use hyper::Client;
-use hyper::client::Body;
+
 
 use std::io::Read;
 use std::collections::BTreeMap;
@@ -14,14 +13,8 @@ use ::json::*;
 /// Attempts to discover bridges using `https://www.meethue.com/api/nupnp`
 #[cfg(feature = "nupnp")]
 pub fn discover() -> Result<Vec<Discovery>> {
-    use hyper::net::HttpsConnector;
-    use hyper_rustls::TlsClient;
-
-    let ssl = TlsClient::new();
-    let connector = HttpsConnector::new(ssl);
-    let client = Client::with_connector(connector);
-
-    client.get("https://www.meethue.com/api/nupnp")
+    let client = reqwest::Client::new();
+    let res = client.get("https://www.meethue.com/api/nupnp")
         .send()
         .map_err(HueError::from)
         .and_then(|ref mut r| from_reader(r).map_err(From::from))
@@ -84,13 +77,14 @@ pub fn discover_upnp() -> ::std::result::Result<Vec<String>, ::ssdp::SSDPError> 
 /// }
 /// ```
 pub fn register_user(ip: &str, devicetype: &str) -> Result<String> {
-    let client = Client::new();
 
     let body = format!("{{\"devicetype\": {:?}}}", devicetype);
     let body = body.as_bytes();
     let url = format!("http://{}/api", ip);
+
+    let client = reqwest::Client::new();
     let mut resp = client.post(&url)
-        .body(Body::BufBody(body, body.len()))
+        .body(body)
         .send()?;
 
     from_reader::<_, Vec<HueResponse<User>>>(&mut resp)?
@@ -103,7 +97,7 @@ pub fn register_user(ip: &str, devicetype: &str) -> Result<String> {
 #[derive(Debug)]
 /// The bridge connection
 pub struct Bridge {
-    client: Client,
+    client: reqwest::Client,
     url: String,
 }
 
@@ -140,7 +134,7 @@ fn get_ip_and_username() {
 pub type SuccessVec = Vec<JsonMap<String, JsonValue>>;
 
 use serde::Deserialize;
-use hyper::client::RequestBuilder;
+use reqwest::RequestBuilder;
 
 fn extract<'a, T: Deserialize<'a>>(responses: Vec<HueResponse<T>>) -> Result<Vec<T>> {
     let mut res_v = Vec::with_capacity(responses.len());

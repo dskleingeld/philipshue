@@ -9,9 +9,6 @@ extern crate ssdp;
 
 extern crate serde;
 extern crate serde_json;
-extern crate hyper;
-#[cfg(feature = "nupnp")]
-extern crate hyper_rustls;
 #[macro_use]
 extern crate error_chain;
 

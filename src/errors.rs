@@ -1,4 +1,4 @@
-use hyper;
+use reqwest;
 use std::convert::From;
 use serde_json;
 use std::io;
@@ -34,7 +34,7 @@ error_chain! {
 
     foreign_links {
         JsonError(serde_json::Error) #[doc = "Json error"];
-        HyperError(hyper::Error)     #[doc = "Hyper error"];
+        ReqwestError(reqwest::Error)     #[doc = "Reqwest error"];
         IOError(io::Error)           #[doc = "IO error"];
     }
 }
