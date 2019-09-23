@@ -1,20 +1,18 @@
-
-
 use std::io::Read;
 use std::collections::BTreeMap;
 
 use serde::de::DeserializeOwned;
 use serde_json::{to_vec, from_slice, from_reader};
 
-use errors::{Result, HueError};
-use ::hue::*;
-use ::json::*;
+use crate::errors::{Result, HueError};
+use crate::hue::*;
+use crate::json::*;
 
 /// Attempts to discover bridges using `https://www.meethue.com/api/nupnp`
 #[cfg(feature = "nupnp")]
 pub fn discover() -> Result<Vec<Discovery>> {
     let client = reqwest::Client::new();
-    let res = client.get("https://www.meethue.com/api/nupnp")
+    client.get("https://www.meethue.com/api/nupnp")
         .send()
         .map_err(HueError::from)
         .and_then(|ref mut r| from_reader(r).map_err(From::from))
@@ -79,7 +77,6 @@ pub fn discover_upnp() -> ::std::result::Result<Vec<String>, ::ssdp::SSDPError> 
 pub fn register_user(ip: &str, devicetype: &str) -> Result<String> {
 
     let body = format!("{{\"devicetype\": {:?}}}", devicetype);
-    let body = body.as_bytes();
     let url = format!("http://{}/api", ip);
 
     let client = reqwest::Client::new();
@@ -101,8 +98,8 @@ pub struct Bridge {
     url: String,
 }
 
-fn send_with_body<'a, T: DeserializeOwned>(rb: RequestBuilder<'a>, body: &'a [u8]) -> Result<T> {
-    send(rb.body(Body::BufBody(body, body.len())))
+fn send_with_body<T: DeserializeOwned>(rb: RequestBuilder, body: impl Into<reqwest::Body>) -> Result<T> {
+    send(rb.body(body))
 }
 
 fn send<T: DeserializeOwned>(rb: RequestBuilder) -> Result<T> {
@@ -148,7 +145,7 @@ impl Bridge {
     /// Creates a `Bridge` on the given IP with the given username
     pub fn new<S: AsRef<str>>(ip: S, username: S) -> Self {
         Bridge {
-            client: Client::new(),
+            client: reqwest::Client::new(),
             url: format!("http://{}/api/{}/", ip.as_ref(), username.as_ref()),
         }
     }
@@ -182,16 +179,14 @@ impl Bridge {
     }
     /// Sets the state of a light by sending a `LightCommand` to the bridge for this light
     pub fn set_light_state(&self, id: usize, command: &LightCommand) -> Result<SuccessVec> {
-        send_with_body(self.client.put(&format!("{}lights/{}/state", self.url, id)),
-                       &to_vec(command)?)
+        send_with_body(self.client.put(&format!("{}lights/{}/state", self.url, id)), to_vec(command)?)
             .and_then(extract)
     }
     /// Renames the light
     pub fn rename_light(&self, id: usize, name: String) -> Result<SuccessVec> {
         let mut name_map = BTreeMap::new();
         name_map.insert("name".to_owned(), name);
-        send_with_body(self.client.put(&format!("{}lights/{}", self.url, id)),
-                       &to_vec(&name_map)?)
+        send_with_body(self.client.put(&format!("{}lights/{}", self.url, id)), to_vec(&name_map)?)
             .and_then(extract)
     }
     /// Deletes a light from the bridge
@@ -217,7 +212,7 @@ impl Bridge {
             action: None,
         };
         let r: HueResponse<Id<usize>> = send_with_body(self.client.post(&format!("{}groups", self.url)),
-                                                     &to_vec(&g)?)?;
+                                                     to_vec(&g)?)?;
         r.into_result().map(|g| g.id)
     }
     /// Gets extra information about a specific group
@@ -226,16 +221,14 @@ impl Bridge {
     }
     /// Set the name, light and class of a group
     pub fn set_group_attributes(&self, id: usize, attr: &GroupCommand) -> Result<SuccessVec> {
-        send_with_body(self.client.put(&format!("{}groups/{}", self.url, id)),
-                       &to_vec(attr)?)
+        send_with_body(self.client.put(&format!("{}groups/{}", self.url, id)), to_vec(attr)?)
             .and_then(extract)
     }
     /// Sets the state of all lights in the group.
     ///
     /// ID 0 is a sepcial group containing all lights known to the bridge
     pub fn set_group_state(&self, id: usize, state: &LightCommand) -> Result<SuccessVec> {
-        send_with_body(self.client.put(&format!("{}groups/{}/action", self.url, id)),
-                       &to_vec(state)?)
+        send_with_body(self.client.put(&format!("{}groups/{}/action", self.url, id)), to_vec(state)?)
             .and_then(extract)
     }
     /// Deletes the specified group
@@ -253,8 +246,7 @@ impl Bridge {
     }
     /// Sets some configuration values.
     pub fn modify_configuration(&self, command: &ConfigurationModifier) -> Result<SuccessVec> {
-        send_with_body(self.client.put(&format!("{}config", self.url)),
-                       &to_vec(command)?)
+        send_with_body(self.client.put(&format!("{}config", self.url)), to_vec(command)?)
             .and_then(extract)
     }
     /// Deletes the specified user removing them from the whitelist.
@@ -276,7 +268,7 @@ impl Bridge {
     /// group that contains all lights
     pub fn recall_scene_in_group(&self, group_id: usize, scene_id: &str) -> Result<SuccessVec> {
         send_with_body(self.client.put(&format!("{}groups/{}/action", self.url, group_id)),
-                       &to_vec(&SceneRecall{scene: scene_id})?)
+                       to_vec(&SceneRecall{scene: scene_id})?)
             .and_then(extract)
     }
 
@@ -289,12 +281,12 @@ impl Bridge {
     /// Creates a scene on the bridge and returns the ID of the created scene.
     pub fn create_scene(&self, scene: &SceneCreater) -> Result<String> {
         let r: HueResponse<Id<String>> = send_with_body(self.client.post(&format!("{}scenes", self.url)),
-                                                        &to_vec(scene)?)?;
+                                                        to_vec(scene)?)?;
         r.into_result().map(|g| g.id)
     }
     /// Sets general things in the specified scene
     pub fn modify_scene(&self, id: &str, scene: &SceneModifier) -> Result<SuccessVec> {
-        send_with_body(self.client.put(&format!("{}scenes/{}", self.url, id)), &to_vec(scene)?)
+        send_with_body(self.client.put(&format!("{}scenes/{}", self.url, id)), to_vec(scene)?)
             .and_then(extract)
     }
     /// Sets the light state of the specified ID that is stored in the scene
@@ -302,7 +294,7 @@ impl Bridge {
         state: &LightStateChange) -> Result<SuccessVec> {
 
         send_with_body(self.client.put(&format!("{}scenes/{}/lightstates/{}", self.url,
-            scene_id, light_id)), &to_vec(state)?).and_then(extract)
+            scene_id, light_id)), to_vec(state)?).and_then(extract)
     }
     /// Deletes the specified scene
     pub fn delete_scene(&self, id: &str) -> Result<Vec<String>> {

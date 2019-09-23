@@ -11,14 +11,14 @@ mod discover;
 use discover::discover;
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    let mut args: Vec<String> = env::args().collect();
     if args.len() != 2 {
         println!("usage : {:?} <devicetype>", args[0]);
     } else {
         let ip = discover().pop().unwrap();
 
         loop {
-            match bridge::register_user(&ip, args.remove(1)) {
+            match bridge::register_user(&ip, &args.remove(1)) {
                 Ok(bridge) => {
                     println!("User registered: {}, on IP: {}", bridge, ip);
                     break;

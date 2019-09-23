@@ -23,7 +23,7 @@ pub enum HueResponse<T> {
     Error(Error)
 }
 
-use ::errors::HueError;
+use crate::errors::HueError;
 
 impl<T> HueResponse<T> {
     pub fn into_result(self) -> Result<T, HueError> {

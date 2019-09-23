@@ -3,8 +3,8 @@ use std::convert::From;
 use serde_json;
 use std::io;
 
-impl From<::json::Error> for HueError {
-    fn from(e: ::json::Error) -> HueError {
+impl From<crate::json::Error> for HueError {
+    fn from(e: crate::json::Error) -> HueError {
         HueErrorKind::BridgeError {
                 address: e.address,
                 description: e.description,
